@@ -484,6 +484,8 @@ class BaseModel(nn.Module):
                     metrics_[metric] = roc_auc_score
                 if metric == "mse":
                     metrics_[metric] = mean_squared_error
+                if metric == "mae":
+                    metrics_[metric] = mean_absolute_error
                 if metric == "accuracy" or metric == "acc":
                     metrics_[metric] = lambda y_true, y_pred: accuracy_score(
                         y_true, np.where(y_pred > 0.5, 1, 0))
