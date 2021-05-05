@@ -3,17 +3,26 @@ import torch
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-
+import sys
+sys.path.append("../")
 from deepctr_torch.inputs import SparseFeat, get_feature_names
 from deepctr_torch.models import DeepFM
-
+import argparse
 if __name__ == "__main__":
-
-    data = pd.read_csv("./movielens_sample.txt")
-    sparse_features = ["movie_id", "user_id",
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=str, default='movielens_sample')
+    parser.add_argument('--linear_only', type=bool, default=False)
+    args, _ = parser.parse_known_args()
+    if args.dataset == "movielens_sample":
+        data = pd.read_csv("./movielens_sample.txt")
+        sparse_features = ["movie_id", "user_id",
                        "gender", "age", "occupation", "zip"]
-    target = ['rating']
-
+        target = ['rating']
+    elif args.dataset == "dazn":
+        data = pd.read_csv("./dazn_sample.txt")
+        sparse_features = ["str_fixture_id","str_outlet","str_competition_name","str_sport_name"]
+        target = ["engagement_rate"]
+        print(f"loading  {args.dataset}")
     # 1.Label Encoding for sparse features,and do simple Transformation for dense features
     for feat in sparse_features:
         lbe = LabelEncoder()
@@ -37,10 +46,10 @@ if __name__ == "__main__":
         print('cuda ready...')
         device = 'cuda:0'
 
-    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
+    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device, linear_only=args.linear_only)
     model.compile("adam", "mse", metrics=['mse'], )
 
-    history = model.fit(train_model_input, train[target].values, batch_size=256, epochs=10, verbose=2,
+    history = model.fit(train_model_input, train[target].values, batch_size=256, epochs=100, verbose=2,
                         validation_split=0.2)
     pred_ans = model.predict(test_model_input, batch_size=256)
     print("test MSE", round(mean_squared_error(
